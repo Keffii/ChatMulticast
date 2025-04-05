@@ -60,7 +60,7 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener {
         topPanel.add(connectionPanel, BorderLayout.WEST);
         panel.add(topPanel, BorderLayout.NORTH);
 
-        // Chat område
+        // Chattområde
         chatArea = new JTextArea();
         chatArea.setEditable(false);
         chatArea.setLineWrap(true);
@@ -179,7 +179,7 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener {
         }
     }
 
-    // Method for updating active users list
+    // Metod för att uppdatera aktiva användare
     void updateUserList() {
         userArea.setText("I chatten just nu:\n");
         for (String user : chatRoom.getActiveUsers()) {
