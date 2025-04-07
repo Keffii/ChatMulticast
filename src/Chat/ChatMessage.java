@@ -4,11 +4,7 @@ import java.io.IOException;
 
 public class ChatMessage {
 
-    public static void sendMessage(ChatSimulatorGUI gui) {
-        if (!gui.isConnected()) {
-            return;
-        }
-
+    public static void sendMessage(ChatGUI gui) {
         String message = gui.getChatInput().getText();
         if (message.trim().isEmpty()) {
             return;

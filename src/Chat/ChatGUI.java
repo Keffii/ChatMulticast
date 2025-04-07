@@ -11,7 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
 
-public class ChatSimulatorGUI extends JFrame implements ActionListener, ChatEventListener {
+public class ChatGUI extends JFrame implements ActionListener, ChatEventListener {
     private JTextField chatInput;
     private JTextArea chatArea;
     private JTextArea userArea;
@@ -19,12 +19,12 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener, ChatEven
     private JButton connectButton;
     private JTextField usernameField;
     private boolean connected = false;
-    private String username = "Anonymous";
+    private String username;
     private ChatRoom chatRoom = new ChatRoom();
     private ChatMulticastReceiver receiver;
     private ChatMulticastSender sender;
 
-    ChatSimulatorGUI() {
+    ChatGUI() {
         setupFrame();
         setupUI();
         initializeNetwork();
@@ -69,7 +69,7 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener, ChatEven
 
         JLabel nameLabel = new JLabel("Användarnamn:");
         usernameField = new JTextField(15);
-        usernameField.setText("Chattare" + new Random().nextInt(1000));
+        usernameField.setText("Chattare" + new Random().nextInt(100));
         connectButton = new JButton("Anslut");
         disconnectButton = new JButton("Koppla ner");
         disconnectButton.setEnabled(false);
@@ -137,11 +137,7 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener, ChatEven
     }
 
     private void connect() {
-        username = usernameField.getText().trim();
-        if (username.isEmpty()) {
-            username = "Anonymous";
-            usernameField.setText(username);
-        }
+       username = usernameField.getText().trim();
 
         try {
             if (receiver == null) {

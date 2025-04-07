@@ -56,29 +56,28 @@ public class ChatMulticastReceiver implements Runnable {
 
     private void processMessage(String message) {
         try {
+            if (message.equals(ChatConfig.REQUEST_USERLIST)) {
+                handleUserListRequest();
+                return;
+            }
+
             boolean isConnected = false;
-            if (listener instanceof ChatSimulatorGUI) {
-                isConnected = ((ChatSimulatorGUI) listener).isConnected();
+            if (listener instanceof ChatGUI) {
+                isConnected = ((ChatGUI) listener).isConnected();
+            }
+
+            if (!isConnected) {
+                return;
             }
 
             if (message.startsWith(ChatConfig.JOIN_PREFIX)) {
-                if (isConnected) {
-                    handleJoinMessage(message.substring(ChatConfig.JOIN_PREFIX.length()).trim());
-                }
+                handleJoinMessage(message.substring(ChatConfig.JOIN_PREFIX.length()).trim());
             } else if (message.startsWith(ChatConfig.LEAVE_PREFIX)) {
-                if (isConnected) {
-                    handleLeaveMessage(message.substring(ChatConfig.LEAVE_PREFIX.length()).trim());
-                }
+                handleLeaveMessage(message.substring(ChatConfig.LEAVE_PREFIX.length()).trim());
             } else if (message.startsWith(ChatConfig.MESSAGE_PREFIX)) {
-                if (isConnected) {
-                    handleChatMessage(message);
-                }
-            } else if (message.equals(ChatConfig.REQUEST_USERLIST)) {
-                handleUserListRequest();
+                handleChatMessage(message);
             } else if (message.startsWith(ChatConfig.USERLIST_PREFIX)) {
-                if (isConnected) {
-                    handleUserListUpdate(message.substring(ChatConfig.USERLIST_PREFIX.length()));
-                }
+                handleUserListUpdate(message.substring(ChatConfig.USERLIST_PREFIX.length()));
             }
         } catch (Exception e) {
             System.err.println("Error processing message: " + e.getMessage());
@@ -103,8 +102,8 @@ public class ChatMulticastReceiver implements Runnable {
     }
 
     private void handleUserListRequest() {
-        if (listener instanceof ChatSimulatorGUI) {
-            ChatSimulatorGUI gui = (ChatSimulatorGUI) listener;
+        if (listener instanceof ChatGUI) {
+            ChatGUI gui = (ChatGUI) listener;
             if (gui.isConnected() && gui.getSender() != null) {
                 try {
                     gui.getSender().sendUserList(gui.getChatRoom().getActiveUsers());
@@ -116,11 +115,10 @@ public class ChatMulticastReceiver implements Runnable {
     }
 
     private void handleUserListUpdate(String userListStr) {
-        if (userListStr.isEmpty()) return;
 
         String[] users = userListStr.split(",");
-        if (listener instanceof ChatSimulatorGUI) {
-            ChatSimulatorGUI gui = (ChatSimulatorGUI) listener;
+        if (listener instanceof ChatGUI) {
+            ChatGUI gui = (ChatGUI) listener;
             for (String user : users) {
                 if (!user.trim().isEmpty()) {
                     gui.getChatRoom().addUser(user.trim());
@@ -136,7 +134,6 @@ public class ChatMulticastReceiver implements Runnable {
             try {
                 socket.leaveGroup(InetAddress.getByName(multicastIP));
             } catch (IOException e) {
-                // Ignore this exception during shutdown
             }
             socket.close();
         }
