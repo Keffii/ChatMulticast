@@ -1,20 +1,29 @@
 package Chat;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ChatRoom {
-    private List<String> activeUsers = new ArrayList<>();
+    private final List<String> activeUsers = Collections.synchronizedList(new ArrayList<>());
 
     public void addUser(String username) {
-        activeUsers.add(username);
+        synchronized (activeUsers) {
+            if (!activeUsers.contains(username)) {
+                activeUsers.add(username);
+            }
+        }
     }
 
     public void removeUser(String username) {
-        activeUsers.remove(username);
+        synchronized (activeUsers) {
+            activeUsers.remove(username);
+        }
     }
 
     public List<String> getActiveUsers() {
-        return new ArrayList<>(activeUsers);
+        synchronized (activeUsers) {
+            return new ArrayList<>(activeUsers);
+        }
     }
 }

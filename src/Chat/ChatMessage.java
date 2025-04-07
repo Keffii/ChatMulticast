@@ -15,12 +15,8 @@ public class ChatMessage {
         }
 
         try {
-            // Create a sender if needed (could be stored in the GUI or as a static variable)
-            ChatMulticastSender sender = new ChatMulticastSender();
-
-
+            ChatMulticastSender sender = gui.getSender();
             sender.sendChatMessage(gui.getUsername(), message);
-
             gui.getChatInput().setText("");
         } catch (IOException e) {
             gui.getChatArea().append("Error sending message: " + e.getMessage() + "\n");

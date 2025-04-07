@@ -7,36 +7,46 @@ import java.net.MulticastSocket;
 import java.util.List;
 
 public class ChatMulticastSender {
-    String multicastIP = "234.235.236.237";
-    InetAddress iadr;
-    int port = 12540;
-    MulticastSocket socket;
+    private final String multicastIP = ChatConfig.MULTICAST_IP;
+    private final int port = ChatConfig.PORT;
+    private InetAddress iadr;
+    private MulticastSocket socket;
 
     public ChatMulticastSender() throws IOException {
         iadr = InetAddress.getByName(multicastIP);
         socket = new MulticastSocket();
     }
 
-    public void sendJoin(String username) throws IOException {
-        sendMessage("Join:" + username);
+    public synchronized void sendJoin(String username) throws IOException {
+        sendMessage(ChatConfig.JOIN_PREFIX + username);
     }
 
-    public void sendLeave(String username) throws IOException {
-        sendMessage("Leave:" + username);
+    public synchronized void sendLeave(String username) throws IOException {
+        sendMessage(ChatConfig.LEAVE_PREFIX + username);
     }
 
     public void sendChatMessage(String username, String message) throws IOException {
-        sendMessage("Message:" + username + ":" + message);
+        sendMessage(ChatConfig.MESSAGE_PREFIX + username + ":" + message);
     }
 
     public void sendUserList(List<String> users) throws IOException {
-        String userList = "UserList:" + String.join(",", users);
+        String userList = ChatConfig.USERLIST_PREFIX + String.join(",", users);
         sendMessage(userList);
     }
 
-    private void sendMessage(String fullMessage) throws IOException {
+    public void sendMessage(String fullMessage) throws IOException {
         byte[] data = fullMessage.getBytes();
         DatagramPacket packet = new DatagramPacket(data, data.length, iadr, port);
         socket.send(packet);
+    }
+
+    public void requestUserList() throws IOException {
+        sendMessage(ChatConfig.REQUEST_USERLIST);
+    }
+
+    public void close() {
+        if (socket != null && !socket.isClosed()) {
+            socket.close();
+        }
     }
 }

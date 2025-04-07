@@ -7,9 +7,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Random;
 
-public class ChatSimulatorGUI extends JFrame implements ActionListener {
+public class ChatSimulatorGUI extends JFrame implements ActionListener, ChatEventListener {
     private JTextField chatInput;
     private JTextArea chatArea;
     private JTextArea userArea;
@@ -23,7 +25,14 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener {
     private ChatMulticastSender sender;
 
     ChatSimulatorGUI() {
-        setTitle("Chat Rum 1");
+        setupFrame();
+        setupUI();
+        initializeNetwork();
+        setVisible(true);
+    }
+
+    private void setupFrame() {
+        setTitle("Chat Multicast");
         setSize(500, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -34,20 +43,33 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener {
                 if (receiver != null) {
                     receiver.stop();
                 }
+                if (sender != null) {
+                    sender.close();
+                }
                 System.exit(0);
             }
         });
+    }
 
+    private void setupUI() {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
         panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        // Anslutningspanel
+        setupConnectionPanel(panel);
+        setupChatArea(panel);
+        setupUserArea(panel);
+        setupInputArea(panel);
+
+        add(panel);
+    }
+
+    private void setupConnectionPanel(JPanel mainPanel) {
         JPanel topPanel = new JPanel(new BorderLayout(5, 0));
         JPanel connectionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
         JLabel nameLabel = new JLabel("Användarnamn:");
         usernameField = new JTextField(15);
-        usernameField.setText("Chattare" + new Random().nextInt(1000)); //Chattare+random nummer vid uppstart
+        usernameField.setText("Chattare" + new Random().nextInt(1000));
         connectButton = new JButton("Anslut");
         disconnectButton = new JButton("Koppla ner");
         disconnectButton.setEnabled(false);
@@ -58,9 +80,14 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener {
         connectionPanel.add(disconnectButton);
 
         topPanel.add(connectionPanel, BorderLayout.WEST);
-        panel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(topPanel, BorderLayout.NORTH);
 
-        // Chattområde
+        // Action listeners
+        connectButton.addActionListener(this);
+        disconnectButton.addActionListener(this);
+    }
+
+    private void setupChatArea(JPanel mainPanel) {
         chatArea = new JTextArea();
         chatArea.setEditable(false);
         chatArea.setLineWrap(true);
@@ -68,45 +95,36 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener {
         JScrollPane chatScrollPane = new JScrollPane(chatArea);
         chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         chatScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        panel.add(chatScrollPane, BorderLayout.CENTER);
+        mainPanel.add(chatScrollPane, BorderLayout.CENTER);
+    }
 
-        // Användarområde
+    private void setupUserArea(JPanel mainPanel) {
         userArea = new JTextArea(10, 15);
         userArea.setEditable(false);
         userArea.setText("I chatten just nu:\n");
         JScrollPane userScrollPane = new JScrollPane(userArea);
         userScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        panel.add(userScrollPane, BorderLayout.EAST);
-
-        // Indata område
-        chatInput = new JTextField();
-        chatInput.setEnabled(false);
-        panel.add(chatInput, BorderLayout.SOUTH);
-
-        add(panel);
-
-        // Action listeners
-        connectButton.addActionListener(this);
-        disconnectButton.addActionListener(this);
-        chatInput.addActionListener(this);
-
-
-        try {
-            // Initiera multicast sender
-            sender = new ChatMulticastSender();
-
-            // Initiera multicast receiver
-            receiver = new ChatMulticastReceiver(this);
-
-            chatArea.append("Network initialized successfully\n");
-        } catch (IOException e) {
-            chatArea.append("Error initializing network: " + e.getMessage() + "\n");
-        }
-
-        setVisible(true);
+        mainPanel.add(userScrollPane, BorderLayout.EAST);
     }
 
-    //Hålla reda på källan för listener och gör det som önskas
+    private void setupInputArea(JPanel mainPanel) {
+        chatInput = new JTextField();
+        chatInput.setEnabled(false);
+        chatInput.addActionListener(this); // Listener för chatInput
+        mainPanel.add(chatInput, BorderLayout.SOUTH);
+    }
+
+    private void initializeNetwork() {
+        try {
+            sender = new ChatMulticastSender();
+            receiver = new ChatMulticastReceiver(this);
+            chatArea.append("Nätverket initierades\n");
+        } catch (IOException e) {
+            chatArea.append("Fel vid initiering av nätverket: " + e.getMessage() + "\n");
+        }
+    }
+
+    // Action performed för listeners
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == chatInput) {
@@ -118,7 +136,6 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener {
         }
     }
 
-    // Ansluta metod
     private void connect() {
         username = usernameField.getText().trim();
         if (username.isEmpty()) {
@@ -126,32 +143,26 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener {
             usernameField.setText(username);
         }
 
-        // Aktivera/inaktivera komponenter
-        chatInput.setEnabled(true);
-        usernameField.setEnabled(false);
-        connectButton.setEnabled(false);
-        disconnectButton.setEnabled(true);
-        connected = true;
-
-
         try {
+            if (receiver == null) {
+                receiver = new ChatMulticastReceiver(this);
+            }
+
+            updateUIForConnection(true);
+
+            // Lägg till själv till userlist och uppdatera
+            chatRoom.addUser(username);
+            updateUserList();
+
             if (sender != null) {
                 sender.sendJoin(username);
-
-                new Thread(() -> {
-                    try {
-                        sender.sendUserList(chatRoom.getActiveUsers());
-                    } catch (Exception e) {
-                        chatArea.append("Error synchronizing user list: " + e.getMessage() + "\n");
-                    }
-                }).start();
+                sender.requestUserList();
             }
         } catch (IOException e) {
-            chatArea.append("Error sending join message: " + e.getMessage() + "\n");
+            chatArea.append("Error connecting to chat: " + e.getMessage() + "\n");
         }
     }
 
-    // Koppla ner metod
     private void disconnect() {
         if (connected) {
             try {
@@ -159,31 +170,39 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener {
                     sender.sendLeave(username);
                 }
             } catch (IOException e) {
-                if (chatArea != null) {
-                    chatArea.append("Error sending leave message: " + e.getMessage() + "\n");
-                }
+                chatArea.append("Error sending leave message: " + e.getMessage() + "\n");
             }
 
-            // Aktivera/inaktivera komponenter
-            chatInput.setEnabled(false);
-            usernameField.setEnabled(true);
-            connectButton.setEnabled(true);
-            disconnectButton.setEnabled(false);
-            connected = false;
+            // Stoppa och rensa receiver
+            if (receiver != null) {
+                receiver.stop();
+                receiver = null;
+            }
 
-            // Ta bort från aktiva användare
-            chatRoom.removeUser(username);
+            updateUIForConnection(false);
+
+            // Rensa chat och uppdatera userlist
+            chatRoom = new ChatRoom();
             updateUserList();
 
             chatArea.append("Frånkopplad från chatten\n");
         }
     }
 
-    // Metod för att uppdatera aktiva användare
+    private void updateUIForConnection(boolean isConnected) {
+        chatInput.setEnabled(isConnected);
+        usernameField.setEnabled(!isConnected);
+        connectButton.setEnabled(!isConnected);
+        disconnectButton.setEnabled(isConnected);
+        connected = isConnected;
+    }
+
     void updateUserList() {
         userArea.setText("I chatten just nu:\n");
-        for (String user : chatRoom.getActiveUsers()) {
-            userArea.append("- " + user + "\n");
+        synchronized (chatRoom.getActiveUsers()) {
+            for (String user : chatRoom.getActiveUsers()) {
+                userArea.append("- " + user + "\n");
+            }
         }
     }
 
@@ -210,5 +229,26 @@ public class ChatSimulatorGUI extends JFrame implements ActionListener {
 
     public ChatRoom getChatRoom() {
         return chatRoom;
+    }
+
+    // ChatEventListener
+    @Override
+    public void onUserJoined(String username) {
+        chatRoom.addUser(username);
+        chatArea.append("User " + username + " har anslutit till chatten\n");
+        updateUserList();
+    }
+
+    @Override
+    public void onUserLeft(String username) {
+        chatRoom.removeUser(username);
+        chatArea.append("User " + username + " har lämnat chatten\n");
+        updateUserList();
+    }
+
+    @Override
+    public void onMessageReceived(String sender, String message) {
+        String timeStamp = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date());
+        chatArea.append("[" + timeStamp + "] " + sender + ": " + message + "\n");
     }
 }
