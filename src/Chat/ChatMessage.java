@@ -1,5 +1,8 @@
 package Chat;
 
+import Chat.GUI.ChatGUI;
+import Chat.Network.ChatMulticastSender;
+
 import java.io.IOException;
 
 public class ChatMessage {

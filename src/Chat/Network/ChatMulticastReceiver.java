@@ -1,4 +1,8 @@
-package Chat;
+package Chat.Network;
+
+import Chat.ChatConfig;
+import Chat.ChatEventListener;
+import Chat.GUI.ChatGUI;
 
 import java.io.IOException;
 import java.net.*;

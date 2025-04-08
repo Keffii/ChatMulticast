@@ -1,4 +1,8 @@
-package Chat;
+package Chat.GUI;
+
+import Chat.*;
+import Chat.Network.ChatMulticastReceiver;
+import Chat.Network.ChatMulticastSender;
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,22 +13,20 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Random;
+
 
 public class ChatGUI extends JFrame implements ActionListener, ChatEventListener {
-    private JTextField chatInput;
-    private JTextArea chatArea;
-    private JTextArea userArea;
-    private JButton disconnectButton;
-    private JButton connectButton;
-    private JTextField usernameField;
     private boolean connected = false;
     private String username;
     private ChatRoom chatRoom = new ChatRoom();
     private ChatMulticastReceiver receiver;
     private ChatMulticastSender sender;
+    private ConnectionPanel connectionPanel;
+    private ChatArea chatArea;
+    private UserArea userArea;
+    private InputArea inputArea;
 
-    ChatGUI() {
+    public ChatGUI() {
         setupFrame();
         setupUI();
         initializeNetwork();
@@ -55,63 +57,23 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
         JPanel panel = new JPanel(new BorderLayout(5, 5));
         panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        setupConnectionPanel(panel);
-        setupChatArea(panel);
-        setupUserArea(panel);
-        setupInputArea(panel);
+        connectionPanel = new ConnectionPanel();
+        JPanel topPanel = connectionPanel.setupConnectionPanel(this);
+        panel.add(topPanel, BorderLayout.NORTH);
+
+        chatArea = new ChatArea();
+        JPanel chatPanel = chatArea.setupChatArea();
+        panel.add(chatPanel, BorderLayout.CENTER);
+
+        userArea = new UserArea();
+        JPanel userPanel = userArea.setupUserArea();
+        panel.add(userPanel, BorderLayout.EAST);
+
+        inputArea = new InputArea();
+        JPanel inputPanel = inputArea.setupInputArea(this);
+        panel.add(inputPanel, BorderLayout.SOUTH);
 
         add(panel);
-    }
-
-    private void setupConnectionPanel(JPanel mainPanel) {
-        JPanel topPanel = new JPanel(new BorderLayout(5, 0));
-        JPanel connectionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-
-        JLabel nameLabel = new JLabel("Användarnamn:");
-        usernameField = new JTextField(15);
-        usernameField.setText("Chattare" + new Random().nextInt(100));
-        connectButton = new JButton("Anslut");
-        disconnectButton = new JButton("Koppla ner");
-        disconnectButton.setEnabled(false);
-
-        connectionPanel.add(nameLabel);
-        connectionPanel.add(usernameField);
-        connectionPanel.add(connectButton);
-        connectionPanel.add(disconnectButton);
-
-        topPanel.add(connectionPanel, BorderLayout.WEST);
-        mainPanel.add(topPanel, BorderLayout.NORTH);
-
-        // Action listeners
-        connectButton.addActionListener(this);
-        disconnectButton.addActionListener(this);
-    }
-
-    private void setupChatArea(JPanel mainPanel) {
-        chatArea = new JTextArea();
-        chatArea.setEditable(false);
-        chatArea.setLineWrap(true);
-        chatArea.setWrapStyleWord(true);
-        JScrollPane chatScrollPane = new JScrollPane(chatArea);
-        chatScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        chatScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        mainPanel.add(chatScrollPane, BorderLayout.CENTER);
-    }
-
-    private void setupUserArea(JPanel mainPanel) {
-        userArea = new JTextArea(10, 15);
-        userArea.setEditable(false);
-        userArea.setText("I chatten just nu:\n");
-        JScrollPane userScrollPane = new JScrollPane(userArea);
-        userScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        mainPanel.add(userScrollPane, BorderLayout.EAST);
-    }
-
-    private void setupInputArea(JPanel mainPanel) {
-        chatInput = new JTextField();
-        chatInput.setEnabled(false);
-        chatInput.addActionListener(this); // Listener för chatInput
-        mainPanel.add(chatInput, BorderLayout.SOUTH);
     }
 
     private void initializeNetwork() {
@@ -127,17 +89,17 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
     // Action performed för listeners
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == chatInput) {
+        if (e.getSource() == inputArea.getChatInput()) {
             ChatMessage.sendMessage(this);
-        } else if (e.getSource() == disconnectButton) {
+        } else if (e.getSource() == connectionPanel.getDisconnectButton()) {
             disconnect();
-        } else if (e.getSource() == connectButton) {
+        } else if (e.getSource() == connectionPanel.getConnectButton()) {
             connect();
         }
     }
 
     private void connect() {
-       username = usernameField.getText().trim();
+        username = connectionPanel.getUsernameField().getText().trim();
 
         try {
             if (receiver == null) {
@@ -146,7 +108,7 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
 
             updateUIForConnection(true);
 
-            // Lägg till själv till userlist och uppdatera
+            // Add self and update UserList
             chatRoom.addUser(username);
             updateUserList();
 
@@ -169,7 +131,7 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
                 chatArea.append("Error sending leave message: " + e.getMessage() + "\n");
             }
 
-            // Stoppa och rensa receiver
+            // Stop and reset receiver
             if (receiver != null) {
                 receiver.stop();
                 receiver = null;
@@ -177,7 +139,7 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
 
             updateUIForConnection(false);
 
-            // Rensa chat och uppdatera userlist
+            // Clean chat and update UserList
             chatRoom = new ChatRoom();
             updateUserList();
 
@@ -186,29 +148,26 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
     }
 
     private void updateUIForConnection(boolean isConnected) {
-        chatInput.setEnabled(isConnected);
-        usernameField.setEnabled(!isConnected);
-        connectButton.setEnabled(!isConnected);
-        disconnectButton.setEnabled(isConnected);
+        inputArea.setEnabled(isConnected);
+        connectionPanel.getUsernameField().setEnabled(!isConnected);
+        connectionPanel.getConnectButton().setEnabled(!isConnected);
+        connectionPanel.getDisconnectButton().setEnabled(isConnected);
         connected = isConnected;
     }
 
-    void updateUserList() {
-        userArea.setText("I chatten just nu:\n");
+    public void updateUserList() {
         synchronized (chatRoom.getActiveUsers()) {
-            for (String user : chatRoom.getActiveUsers()) {
-                userArea.append("- " + user + "\n");
-            }
+            userArea.updateUserList(chatRoom.getActiveUsers());
         }
     }
 
-    // Getters
+    // Getter methods
     public JTextField getChatInput() {
-        return chatInput;
+        return inputArea.getChatInput();
     }
 
     public JTextArea getChatArea() {
-        return chatArea;
+        return chatArea.getChatArea();
     }
 
     public String getUsername() {

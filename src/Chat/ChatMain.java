@@ -1,5 +1,7 @@
 package Chat;
 
+import Chat.GUI.ChatGUI;
+
 import javax.swing.SwingUtilities;
 
 public class ChatMain {

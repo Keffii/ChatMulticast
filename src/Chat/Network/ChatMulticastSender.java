@@ -1,4 +1,6 @@
-package Chat;
+package Chat.Network;
+
+import Chat.ChatConfig;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
