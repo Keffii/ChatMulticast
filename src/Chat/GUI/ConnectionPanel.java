@@ -10,27 +10,34 @@ public class ConnectionPanel {
     private JTextField usernameField;
     private JButton disconnectButton;
     private JButton connectButton;
+    private JButton exitButton; // New exit button
 
     public JPanel setupConnectionPanel(ActionListener listener) {
         JPanel topPanel = new JPanel(new BorderLayout(5, 0));
         JPanel connectionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
         JLabel nameLabel = new JLabel("Användarnamn:");
         usernameField = new JTextField(15);
         usernameField.setText("Chattare" + new Random().nextInt(100));
         connectButton = new JButton("Anslut");
-        disconnectButton = new JButton("Koppla ner");
+        disconnectButton = new JButton("Koppla från");
         disconnectButton.setEnabled(false);
+        exitButton = new JButton("Koppla ner");
 
         connectionPanel.add(nameLabel);
         connectionPanel.add(usernameField);
         connectionPanel.add(connectButton);
         connectionPanel.add(disconnectButton);
 
+        rightPanel.add(exitButton);
+
         topPanel.add(connectionPanel, BorderLayout.WEST);
+        topPanel.add(rightPanel, BorderLayout.EAST);
 
         connectButton.addActionListener(listener);
         disconnectButton.addActionListener(listener);
+        exitButton.addActionListener(listener); // Add listener to exit button
 
         return topPanel;
     }
@@ -46,5 +53,9 @@ public class ConnectionPanel {
 
     public JButton getDisconnectButton() {
         return disconnectButton;
+    }
+
+    public JButton getExitButton() {
+        return exitButton;
     }
 }
