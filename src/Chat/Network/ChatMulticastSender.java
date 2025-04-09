@@ -2,13 +2,15 @@ package Chat.Network;
 
 import Chat.ChatConfig;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.List;
 
-public class ChatMulticastSender {
+// Handles sending formatted messages to the multicast group
+public class ChatMulticastSender implements Closeable {
     private final String multicastIP = ChatConfig.MULTICAST_IP;
     private final int port = ChatConfig.PORT;
     private InetAddress iadr;
@@ -46,7 +48,8 @@ public class ChatMulticastSender {
         sendMessage(ChatConfig.REQUEST_USERLIST);
     }
 
-    public void close() {
+    @Override
+    public void close() throws IOException {
         if (socket != null && !socket.isClosed()) {
             socket.close();
         }

@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.Random;
 
+// Provides controls for connecting and disconnecting from the chat
 public class ConnectionPanel {
     private JTextField usernameField;
     private JButton disconnectButton;

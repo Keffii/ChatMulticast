@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 
+// Handles user text input for sending messages
 public class InputArea {
     private JTextField chatInput;
 

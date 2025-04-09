@@ -5,8 +5,10 @@ import Chat.Network.ChatMulticastSender;
 
 import java.io.IOException;
 
+// Utility class for sending chat messages through the network
 public class ChatMessage {
 
+    // Sends a chat message from the input field and clears the input afterward
     public static void sendMessage(ChatGUI gui) {
         String message = gui.getChatInput().getText();
         if (message.trim().isEmpty()) {

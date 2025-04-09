@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+// Maintains a thread-safe list of active users in the chat
 public class ChatRoom {
     private final List<String> activeUsers = Collections.synchronizedList(new ArrayList<>());
 

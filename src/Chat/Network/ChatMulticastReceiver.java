@@ -4,10 +4,12 @@ import Chat.ChatConfig;
 import Chat.ChatEventListener;
 import Chat.GUI.ChatGUI;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.*;
 
-public class ChatMulticastReceiver implements Runnable {
+// Receives and processes multicast messages from the network
+public class ChatMulticastReceiver implements Runnable, Closeable {
 
     private ChatEventListener listener;
     private MulticastSocket socket;
@@ -58,6 +60,7 @@ public class ChatMulticastReceiver implements Runnable {
         }
     }
 
+    // Handles messages to appropriate handlers based on message type
     private void processMessage(String message) {
         try {
             if (message.equals(ChatConfig.REQUEST_USERLIST)) {
@@ -132,14 +135,16 @@ public class ChatMulticastReceiver implements Runnable {
         }
     }
 
+    //terminates the receiver thread and closes resources
     public void stop() {
         running = false;
         if (socket != null && !socket.isClosed()) {
-            try {
-                socket.leaveGroup(InetAddress.getByName(multicastIP));
-            } catch (IOException e) {
-            }
             socket.close();
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        stop();
     }
 }

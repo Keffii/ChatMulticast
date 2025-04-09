@@ -1,7 +1,7 @@
 package Chat;
 
 public class ChatConfig {
-    // Nätverksinställningar
+    // Networksettings
     public static final String MULTICAST_IP = "234.235.236.237";
     public static final int PORT = 12540;
 

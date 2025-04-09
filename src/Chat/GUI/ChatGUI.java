@@ -42,12 +42,19 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 disconnect();
-                if (receiver != null) {
-                    receiver.stop();
+
+                // Use try-with-resources for proper resource cleanup
+                try {
+                    if (sender != null) {
+                        sender.close();
+                    }
+                    if (receiver != null) {
+                        receiver.close();
+                    }
+                } catch (IOException ex) {
+                    chatArea.append("Error closing resources: " + ex.getMessage() + "\n");
                 }
-                if (sender != null) {
-                    sender.close();
-                }
+
                 System.exit(0);
             }
         });
@@ -86,7 +93,7 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
         }
     }
 
-    // Action performed för listeners
+    // Handles button clicks and text input events
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == inputArea.getChatInput()) {
@@ -131,9 +138,13 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
                 chatArea.append("Error sending leave message: " + e.getMessage() + "\n");
             }
 
-            // Stop and reset receiver
+            // Close and reset receiver
             if (receiver != null) {
-                receiver.stop();
+                try {
+                    receiver.close();
+                } catch (IOException e) {
+                    chatArea.append("Error closing receiver: " + e.getMessage() + "\n");
+                }
                 receiver = null;
             }
 
@@ -147,6 +158,7 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
         }
     }
 
+    // Updates UI component states based on connection status
     private void updateUIForConnection(boolean isConnected) {
         inputArea.setEnabled(isConnected);
         connectionPanel.getUsernameField().setEnabled(!isConnected);

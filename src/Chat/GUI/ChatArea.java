@@ -28,8 +28,9 @@ public class ChatArea {
         return chatArea;
     }
 
-    // Helper method to append messages
+    // Appends text to chat area and auto-scrolls to show newest messages
     public void append(String message) {
-        chatArea.append(message + "\n");
+        chatArea.append(message);
+        chatArea.setCaretPosition(chatArea.getDocument().getLength());
     }
 }
