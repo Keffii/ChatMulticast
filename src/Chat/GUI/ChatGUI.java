@@ -35,7 +35,7 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
 
     private void setupFrame() {
         setTitle("Chat Multicast");
-        setSize(580, 400);
+        setSize(560, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
@@ -43,14 +43,8 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
             public void windowClosing(WindowEvent e) {
                 disconnect();
 
-                // Clean up resources
-                try {
-                    if (sender != null) {
-                        sender.close();
-                    }
-                    if (receiver != null) {
-                        receiver.close();
-                    }
+                // try-with-resources
+                try (ChatMulticastSender s = sender; ChatMulticastReceiver r = receiver) {
                 } catch (IOException ex) {
                     chatArea.append("Error closing resources: " + ex.getMessage() + "\n");
                 }
@@ -124,7 +118,6 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
             chatArea.append("Error closing resources: " + ex.getMessage() + "\n");
         }
 
-        // Exit the application
         System.exit(0);
     }
 
@@ -161,10 +154,9 @@ public class ChatGUI extends JFrame implements ActionListener, ChatEventListener
                 chatArea.append("Error sending leave message: " + e.getMessage() + "\n");
             }
 
-            // Close and reset receiver
+            // Use try-with-resources to close the receiver
             if (receiver != null) {
-                try {
-                    receiver.close();
+                try (ChatMulticastReceiver r = receiver) {
                 } catch (IOException e) {
                     chatArea.append("Error closing receiver: " + e.getMessage() + "\n");
                 }
